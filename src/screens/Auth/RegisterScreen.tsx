@@ -14,9 +14,9 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { AuthStackParamList } from '../../navigation/AuthNavigator';
+import { RootStackParamList } from '../../navigation/RootNavigator';
 
-type RegisterScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Register'>;
+type RegisterScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Register'>;
 
 export default function RegisterScreen() {
   const [nome, setNome] = useState('');
@@ -110,7 +110,12 @@ export default function RegisterScreen() {
               </View>
 
               {/* Botão Registrar */}
-              <TouchableOpacity style={styles.registerButton}>
+              <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate('Confirmation', {
+                title: 'Bem-vindo !',
+                message: 'Sua conta foi criada com sucesso! Agora você pode fazer seus pedidos.',
+                buttonText: 'Continuar',
+                navigateTo: 'Menu'
+              })}>
                 <Text style={styles.registerButtonText}>Registrar</Text>
               </TouchableOpacity>
             </View>

@@ -13,10 +13,10 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { AuthStackParamList } from '../../navigation/AuthNavigator';
+import { RootStackParamList } from '../../navigation/RootNavigator';
 import { AntDesign, FontAwesome } from '@expo/vector-icons';
 
-type LoginScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'Login'>;
+type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>;
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -62,7 +62,7 @@ export default function LoginScreen() {
             </View>
 
             {/* Botão Continuar */}
-            <TouchableOpacity style={styles.continueButton}>
+            <TouchableOpacity style={styles.continueButton} onPress={() => navigation.navigate('Menu')}>
               <Text style={styles.continueButtonText}>Continuar</Text>
             </TouchableOpacity>
 

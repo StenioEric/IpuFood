@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import AuthNavigator from './src/navigation/AuthNavigator';
+import RootNavigator from './src/navigation/RootNavigator';
 import { useFonts, Lobster_400Regular } from '@expo-google-fonts/lobster';
 import * as SplashScreen from 'expo-splash-screen';
 
@@ -23,7 +23,7 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      <AuthNavigator />
+      <RootNavigator />
     </NavigationContainer>
   );
 }
