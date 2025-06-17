@@ -1,7 +1,7 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
-import { MenuScreen } from '../screens/Menu';
-import { ProductDetailScreen } from '../screens/Product';
+import { MenuScreen } from '../screens';
+import ProductDetailScreen from '../screens/Product/ProductDetailScreen';
 
 export type MainStackParamList = {
   Menu: undefined;

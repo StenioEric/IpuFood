@@ -1,13 +1,14 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { LoginScreen, RegisterScreen } from '../screens/Auth';
-import { MenuScreen } from '../screens/Menu';
-import { ProductDetailScreen } from '../screens/Product';
-import { ProfileScreen } from '../screens/Profile';
-import { CartScreen } from '../screens/Cart';
-import { PaymentScreen } from '../screens/Payment';
-import { ConfirmationScreen } from '../screens/Confirmation';
+import { LoginScreen } from '../screens';
+import { RegisterScreen } from '../screens';
+import { MenuScreen } from '../screens';
+import { ProductDetailScreen } from '../screens';
+import { ProfileScreen } from '../screens';
+import { CartScreen } from '../screens';
+import { PaymentScreen } from '../screens';
+import { ConfirmationScreen } from '../screens';
 
 export type RootStackParamList = {
   Login: undefined;
