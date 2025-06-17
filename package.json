@@ -1,5 +1,5 @@
 {
-  "name": "lanchoneteapp",
+  "name": "ipufood",
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
@@ -15,14 +15,14 @@
     "@react-navigation/bottom-tabs": "^7.3.14",
     "@react-navigation/native": "^7.1.10",
     "@react-navigation/stack": "^7.3.3",
-    "expo": "~53.0.10",
+    "expo": "^53.0.11",
     "expo-font": "^13.3.1",
     "expo-splash-screen": "^0.30.9",
     "expo-status-bar": "~2.2.3",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "0.79.3",
-    "react-native-safe-area-context": "^5.4.1",
+    "react-native-safe-area-context": "^5.4.0",
     "react-native-screens": "^4.11.1",
     "react-native-web": "^0.20.0"
   },
