@@ -1,4 +1,6 @@
 import React from 'react';
+import { styles } from './styles';
+
 import {
   View,
   Text,
@@ -65,87 +67,3 @@ export default function ConfirmationScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(180, 180, 180, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  modal: {
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 30,
-    alignItems: 'center',
-    width: '100%',
-    maxWidth: 320,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 15,
-  },
-  iconContainer: {
-    marginBottom: 25,
-  },
-  iconCircle: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: '#FF5A5F',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#FF5A5F',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FF5A5F',
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  message: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 30,
-  },
-  button: {
-    backgroundColor: '#FF5A5F',
-    borderRadius: 25,
-    paddingVertical: 15,
-    paddingHorizontal: 40,
-    width: '100%',
-    alignItems: 'center',
-    shadowColor: '#FF5A5F',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-}); 
