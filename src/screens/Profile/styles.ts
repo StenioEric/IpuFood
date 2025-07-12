@@ -4,13 +4,13 @@ export const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FF5A5F',
+    paddingTop: 35,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 15,
   },
   backButton: {
     padding: 5,
@@ -21,7 +21,7 @@ export const styles = StyleSheet.create({
   profileCard: {
     flex: 1,
     backgroundColor: 'white',
-    marginTop: 20,
+    marginTop: 15,
     marginHorizontal: 20,
     marginBottom: 40,
     borderRadius: 25,
