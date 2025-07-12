@@ -108,4 +108,10 @@ export const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
+    labelError: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 5,
+  },
 }); 
