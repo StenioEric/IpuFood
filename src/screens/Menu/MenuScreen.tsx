@@ -172,9 +172,6 @@ export default function MenuScreen() {
           <Ionicons name="home" size={24} color="white" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="bag-outline" size={24} color="white" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
           <Ionicons name="receipt-outline" size={24} color="white" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem}>

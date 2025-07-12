@@ -145,9 +145,7 @@ export default function CartScreen() {
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Pedidos</Text>
-        <TouchableOpacity style={styles.searchButton}>
-          <Ionicons name="search" size={24} color="#333" />
-        </TouchableOpacity>
+        <View></View>
       </View>
 
       {/* Cart Content */}
@@ -195,6 +193,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
+    paddingTop: 35,
+    marginBottom: 20,
   },
   header: {
     flexDirection: 'row',

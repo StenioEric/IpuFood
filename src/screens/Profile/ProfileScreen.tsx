@@ -39,9 +39,6 @@ export default function ProfileScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.settingsButton}>
-          <Ionicons name="settings-outline" size={24} color="white" />
-        </TouchableOpacity>
       </View>
 
       {/* Profile Card */}
