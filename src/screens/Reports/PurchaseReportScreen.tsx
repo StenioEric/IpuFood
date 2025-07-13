@@ -6,161 +6,103 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StyleSheet,
+  Dimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../navigation/RootNavigator';
-
+import { orderService, Order } from '../../services/orderService';
+import { useUser } from '../../context/UserContext';
 
 type PurchaseReportScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
   'PurchaseReport'
 >;
 
-interface Order {
-  id: string;
-  userId: string;
-  userName: string;
-  items: OrderItem[];
-  total: number;
-  status: 'pending' | 'confirmed' | 'preparing' | 'delivering' | 'delivered' | 'cancelled';
-  paymentMethod: 'credit' | 'pix' | 'cash';
-  createdAt: Date;
-  deliveredAt?: Date;
-}
-
-interface OrderItem {
-  id: string;
-  productId: string;
-  productName: string;
-  quantity: number;
-  price: number;
-  total: number;
-}
+const { width } = Dimensions.get('window');
 
 export default function PurchaseReportScreen() {
   const navigation = useNavigation<PurchaseReportScreenNavigationProp>();
+  const { user } = useUser();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'year'>('week');
 
-  // Dados simulados para demonstração
+  // Carregar dados do Firebase
   useEffect(() => {
-    const mockOrders: Order[] = [
-      {
-        id: '1',
-        userId: 'user1',
-        userName: 'Usuário',
-        items: [
-          { 
-            id: '1', 
-            productId: '1', 
-            productName: 'X-Burger',
-            quantity: 2, 
-            price: 15.00,
-            total: 30.00
-          },
-          { 
-            id: '2', 
-            productId: '2', 
-            productName: 'Pizza Margherita',
-            quantity: 1, 
-            price: 25.00,
-            total: 25.00
-          },
-        ],
-        total: 55.00,
-        status: 'delivered',
-        paymentMethod: 'credit',
-        createdAt: new Date('2024-01-15'),
-        deliveredAt: new Date('2024-01-15'),
-      },
-      {
-        id: '2',
-        userId: 'user1',
-        userName: 'Usuário',
-        items: [
-          { 
-            id: '3', 
-            productId: '3', 
-            productName: 'Batata Frita',
-            quantity: 3, 
-            price: 12.00,
-            total: 36.00
-          },
-        ],
-        total: 36.00,
-        status: 'delivered',
-        paymentMethod: 'pix',
-        createdAt: new Date('2024-01-10'),
-        deliveredAt: new Date('2024-01-10'),
-      },
-      {
-        id: '3',
-        userId: 'user1',
-        userName: 'Usuário',
-        items: [
-          { 
-            id: '4', 
-            productId: '1', 
-            productName: 'X-Burger',
-            quantity: 1, 
-            price: 15.00,
-            total: 15.00
-          },
-          { 
-            id: '5', 
-            productId: '4', 
-            productName: 'Refrigerante',
-            quantity: 2, 
-            price: 18.00,
-            total: 36.00
-          },
-        ],
-        total: 51.00,
-        status: 'pending',
-        paymentMethod: 'cash',
-        createdAt: new Date('2024-01-13'),
-      },
-      {
-        id: '4',
-        userId: 'user1',
-        userName: 'Usuário',
-        items: [
-          { 
-            id: '6', 
-            productId: '5', 
-            productName: 'Sorvete',
-            quantity: 2, 
-            price: 8.00,
-            total: 16.00
-          },
-        ],
-        total: 16.00,
-        status: 'delivered',
-        paymentMethod: 'pix',
-        createdAt: new Date('2024-01-08'),
-        deliveredAt: new Date('2024-01-08'),
-      },
-    ];
+    if (user) {
+      loadUserOrders();
+    }
+  }, [user]);
 
-    setOrders(mockOrders);
-    setLoading(false);
-  }, []);
+  const loadUserOrders = async () => {
+    try {
+      setLoading(true);
+      console.log('🔍 Carregando pedidos para usuário:', user?.id);
+      const userOrders = await orderService.getUserOrders(user!.id);
+      console.log('📦 Pedidos carregados:', userOrders.length, userOrders);
+      setOrders(userOrders);
+    } catch (error) {
+      console.error('❌ Erro ao carregar pedidos:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const completedOrders = orders.filter(order => order.status === 'delivered');
   const pendingOrders = orders.filter(order => order.status === 'pending');
   const totalSpent = completedOrders.reduce((sum, order) => sum + order.total, 0);
   const averageOrderValue = completedOrders.length > 0 ? totalSpent / completedOrders.length : 0;
 
-  // Produtos favoritos (baseado na frequência de compra)
-  const favoriteProducts = [
-    { name: 'X-Burger', purchases: 3, totalSpent: 45.00 },
-    { name: 'Pizza Margherita', purchases: 2, totalSpent: 50.00 },
-    { name: 'Batata Frita', purchases: 2, totalSpent: 24.00 },
-    { name: 'Refrigerante', purchases: 1, totalSpent: 18.00 },
-  ];
+  // Calcular categorias favoritas baseado nos dados reais
+  const categoryStats = new Map();
+  orders.forEach(order => {
+    order.items.forEach(item => {
+      // Simular categorias baseado no nome do produto
+      let category = 'Outros';
+      if (item.productName.toLowerCase().includes('burger') || item.productName.toLowerCase().includes('x-')) {
+        category = 'Lanches';
+      } else if (item.productName.toLowerCase().includes('pizza')) {
+        category = 'Pizzas';
+      } else if (item.productName.toLowerCase().includes('batata') || item.productName.toLowerCase().includes('frita')) {
+        category = 'Acompanhamentos';
+      } else if (item.productName.toLowerCase().includes('refrigerante') || item.productName.toLowerCase().includes('bebida')) {
+        category = 'Bebidas';
+      } else if (item.productName.toLowerCase().includes('sorvete') || item.productName.toLowerCase().includes('sobremesa')) {
+        category = 'Sobremesas';
+      }
+
+      const existing = categoryStats.get(category) || { count: 0, total: 0 };
+      categoryStats.set(category, {
+        count: existing.count + item.quantity,
+        total: existing.total + item.total
+      });
+    });
+  });
+
+  const topCategories = Array.from(categoryStats.entries())
+    .map(([name, stats]) => ({ name, ...stats }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 4);
+
+  // Calcular gastos por dia baseado nos dados reais
+  const spendingByDayMap = new Map();
+  const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  
+  daysOfWeek.forEach(day => spendingByDayMap.set(day, 0));
+  
+  orders.forEach(order => {
+    const dayOfWeek = daysOfWeek[order.createdAt.getDay()];
+    const existing = spendingByDayMap.get(dayOfWeek) || 0;
+    spendingByDayMap.set(dayOfWeek, existing + order.total);
+  });
+
+  const spendingByDay = daysOfWeek.map(day => ({
+    day,
+    spent: spendingByDayMap.get(day) || 0
+  }));
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -221,106 +163,140 @@ export default function PurchaseReportScreen() {
           <Ionicons name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Meus Pedidos</Text>
-        <TouchableOpacity style={styles.shareButton}>
-          <Ionicons name="share-outline" size={24} color="#FFF" />
+        <TouchableOpacity style={styles.filterButton}>
+          <Ionicons name="filter" size={24} color="#FFF" />
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Resumo Pessoal */}
+        {/* Período Selector */}
+        <View style={styles.periodSelector}>
+          <TouchableOpacity 
+            style={[styles.periodButton, selectedPeriod === 'week' && styles.periodButtonActive]}
+            onPress={() => setSelectedPeriod('week')}
+          >
+            <Text style={[styles.periodButtonText, selectedPeriod === 'week' && styles.periodButtonTextActive]}>
+              Semana
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.periodButton, selectedPeriod === 'month' && styles.periodButtonActive]}
+            onPress={() => setSelectedPeriod('month')}
+          >
+            <Text style={[styles.periodButtonText, selectedPeriod === 'month' && styles.periodButtonTextActive]}>
+              Mês
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.periodButton, selectedPeriod === 'year' && styles.periodButtonActive]}
+            onPress={() => setSelectedPeriod('year')}
+          >
+            <Text style={[styles.periodButtonText, selectedPeriod === 'year' && styles.periodButtonTextActive]}>
+              Ano
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Resumo Geral */}
         <View style={styles.summarySection}>
-          <Text style={styles.sectionTitle}>Resumo dos Meus Pedidos</Text>
+          <Text style={styles.sectionTitle}>Resumo Geral</Text>
           <View style={styles.summaryGrid}>
             <View style={styles.summaryCard}>
-              <Ionicons name="bag-check" size={24} color="#4CAF50" />
-              <Text style={styles.summaryValue}>{completedOrders.length}</Text>
-              <Text style={styles.summaryLabel}>Pedidos Concluídos</Text>
-            </View>
-            <View style={styles.summaryCard}>
-              <Ionicons name="time" size={24} color="#FF9800" />
-              <Text style={styles.summaryValue}>{pendingOrders.length}</Text>
-              <Text style={styles.summaryLabel}>Pedidos Pendentes</Text>
-            </View>
-            <View style={styles.summaryCard}>
-              <Ionicons name="wallet" size={24} color="#2196F3" />
+              <Ionicons name="wallet" size={24} color="#4CAF50" />
               <Text style={styles.summaryValue}>R$ {totalSpent.toFixed(2)}</Text>
               <Text style={styles.summaryLabel}>Total Gasto</Text>
             </View>
             <View style={styles.summaryCard}>
-              <Ionicons name="calculator" size={24} color="#9C27B0" />
+              <Ionicons name="checkmark-circle" size={24} color="#2196F3" />
+              <Text style={styles.summaryValue}>{completedOrders.length}</Text>
+              <Text style={styles.summaryLabel}>Pedidos Concluídos</Text>
+            </View>
+            <View style={styles.summaryCard}>
+              <Ionicons name="calculator" size={24} color="#FF9800" />
               <Text style={styles.summaryValue}>R$ {averageOrderValue.toFixed(2)}</Text>
               <Text style={styles.summaryLabel}>Ticket Médio</Text>
+            </View>
+            <View style={styles.summaryCard}>
+              <Ionicons name="time" size={24} color="#9C27B0" />
+              <Text style={styles.summaryValue}>{pendingOrders.length}</Text>
+              <Text style={styles.summaryLabel}>Pedidos Pendentes</Text>
             </View>
           </View>
         </View>
 
-        {/* Produtos Favoritos */}
+        {/* Gráfico de Gastos */}
+        <View style={styles.chartSection}>
+          <Text style={styles.sectionTitle}>Gastos por Dia</Text>
+          <View style={styles.chartContainer}>
+            {spendingByDay.map((day, index) => (
+              <View key={index} style={styles.chartBar}>
+                <View 
+                  style={[
+                    styles.chartBarFill, 
+                    { height: day.spent > 0 ? (day.spent / 60) * 100 : 5 }
+                  ]} 
+                />
+                <Text style={styles.chartLabel}>{day.day}</Text>
+                <Text style={styles.chartValue}>R$ {day.spent.toFixed(0)}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Categorias Mais Compradas */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Meus Produtos Favoritos</Text>
-          {favoriteProducts.map((product, index) => (
-            <View key={index} style={styles.productItem}>
-              <View style={styles.productRank}>
-                <Ionicons name="heart" size={20} color="#FF6B35" />
+          <Text style={styles.sectionTitle}>Categorias Favoritas</Text>
+          {topCategories.map((category, index) => (
+            <View key={index} style={styles.categoryItem}>
+              <View style={styles.categoryRank}>
+                <Text style={styles.rankNumber}>{index + 1}</Text>
               </View>
-              <View style={styles.productInfo}>
-                <Text style={styles.productName}>{product.name}</Text>
-                <Text style={styles.productPurchases}>{product.purchases} compras</Text>
+              <View style={styles.categoryInfo}>
+                <Text style={styles.categoryName}>{category.name}</Text>
+                <Text style={styles.categoryCount}>{category.count} pedidos</Text>
               </View>
-              <Text style={styles.productSpent}>R$ {product.totalSpent.toFixed(2)}</Text>
+              <Text style={styles.categoryTotal}>R$ {category.total.toFixed(2)}</Text>
             </View>
           ))}
         </View>
 
-        {/* Histórico de Pedidos */}
+        {/* Lista de Pedidos */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Histórico de Pedidos</Text>
-          {orders.map((order) => (
-            <View key={order.id} style={styles.orderItem}>
-              <View style={styles.orderHeader}>
-                <Text style={styles.orderId}>Pedido #{order.id}</Text>
-                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(order.status) }]}>
-                  <Text style={styles.statusText}>{getStatusText(order.status)}</Text>
+          {orders.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Ionicons name="receipt-outline" size={48} color="#CCC" />
+              <Text style={styles.emptyText}>Nenhum pedido encontrado</Text>
+              <Text style={styles.emptySubtext}>Faça seu primeiro pedido para ver o histórico aqui</Text>
+            </View>
+          ) : (
+            orders.map((order) => (
+              <View key={order.id} style={styles.orderItem}>
+                <View style={styles.orderHeader}>
+                  <Text style={styles.orderId}>Pedido #{order.id}</Text>
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(order.status) }]}>
+                    <Text style={styles.statusText}>{getStatusText(order.status)}</Text>
+                  </View>
+                </View>
+                
+                <View style={styles.orderItems}>
+                  {order.items.map((item) => (
+                    <Text key={item.id} style={styles.orderItemText}>
+                      {item.quantity}x {item.productName} - R$ {item.total.toFixed(2)}
+                    </Text>
+                  ))}
+                </View>
+                
+                <View style={styles.orderFooter}>
+                  <Text style={styles.orderDate}>
+                    {order.createdAt.toLocaleDateString('pt-BR')}
+                  </Text>
+                  <Text style={styles.orderTotal}>R$ {order.total.toFixed(2)}</Text>
                 </View>
               </View>
-              
-              <View style={styles.orderDetails}>
-                <Text style={styles.orderDate}>
-                  {order.createdAt.toLocaleDateString('pt-BR')}
-                </Text>
-                <Text style={styles.orderTotal}>R$ {order.total.toFixed(2)}</Text>
-              </View>
-              
-              <View style={styles.orderItems}>
-                {order.items.map((item) => (
-                  <Text key={item.id} style={styles.orderItemText}>
-                    {item.quantity}x {item.productName}
-                  </Text>
-                ))}
-              </View>
-
-              <View style={styles.orderFooter}>
-                <Text style={styles.paymentMethod}>
-                  {order.paymentMethod === 'credit' ? 'Cartão' : 
-                   order.paymentMethod === 'pix' ? 'PIX' : 'Dinheiro'}
-                </Text>
-                {order.deliveredAt && (
-                  <Text style={styles.deliveryDate}>
-                    Entregue em {order.deliveredAt.toLocaleDateString('pt-BR')}
-                  </Text>
-                )}
-              </View>
-            </View>
-          ))}
+            ))
+          )}
         </View>
-
-        {/* Botão para fazer novo pedido */}
-        <TouchableOpacity 
-          style={styles.newOrderButton}
-          onPress={() => navigation.navigate('Menu')}
-        >
-          <Ionicons name="add-circle" size={24} color="#FFF" />
-          <Text style={styles.newOrderButtonText}>Fazer Novo Pedido</Text>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -332,7 +308,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
   },
   header: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#FF6B35',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -347,7 +323,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFF',
   },
-  shareButton: {
+  filterButton: {
     padding: 5,
   },
   content: {
@@ -362,6 +338,38 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     color: '#666',
+  },
+  periodSelector: {
+    flexDirection: 'row',
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 3,
+  },
+  periodButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  periodButtonActive: {
+    backgroundColor: '#FF6B35',
+  },
+  periodButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  periodButtonTextActive: {
+    color: '#FFF',
   },
   summarySection: {
     marginBottom: 20,
@@ -381,7 +389,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 12,
     padding: 15,
-    width: '48%',
+    width: (width - 50) / 2,
     marginBottom: 10,
     alignItems: 'center',
     shadowColor: '#000',
@@ -405,10 +413,49 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
+  chartSection: {
+    marginBottom: 20,
+  },
+  chartContainer: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    height: 150,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 3,
+  },
+  chartBar: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  chartBarFill: {
+    width: 20,
+    backgroundColor: '#FF6B35',
+    borderRadius: 10,
+    marginBottom: 8,
+  },
+  chartLabel: {
+    fontSize: 12,
+    color: '#666',
+  },
+  chartValue: {
+    fontSize: 10,
+    color: '#999',
+    marginTop: 2,
+  },
   section: {
     marginBottom: 20,
   },
-  productItem: {
+  categoryItem: {
     backgroundColor: 'white',
     borderRadius: 12,
     padding: 15,
@@ -424,29 +471,34 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 3,
   },
-  productRank: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFF5F5',
+  categoryRank: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#FF6B35',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
   },
-  productInfo: {
+  rankNumber: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  categoryInfo: {
     flex: 1,
   },
-  productName: {
+  categoryName: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
   },
-  productPurchases: {
+  categoryCount: {
     fontSize: 14,
     color: '#666',
     marginTop: 2,
   },
-  productSpent: {
+  categoryTotal: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#4CAF50',
@@ -486,21 +538,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  orderDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  orderDate: {
-    fontSize: 14,
-    color: '#666',
-  },
-  orderTotal: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#4CAF50',
-  },
   orderItems: {
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
@@ -520,36 +557,29 @@ const styles = StyleSheet.create({
     borderTopColor: '#E0E0E0',
     paddingTop: 10,
   },
-  paymentMethod: {
+  orderDate: {
     fontSize: 12,
     color: '#999',
   },
-  deliveryDate: {
-    fontSize: 12,
-    color: '#999',
-  },
-  newOrderButton: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 12,
-    padding: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 3,
-  },
-  newOrderButtonText: {
-    color: '#FFF',
+  orderTotal: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginLeft: 8,
+    color: '#4CAF50',
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyText: {
+    fontSize: 18,
+    color: '#666',
+    marginTop: 16,
+    fontWeight: '600',
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 8,
+    textAlign: 'center',
   },
 }); 

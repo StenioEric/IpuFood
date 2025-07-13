@@ -13,27 +13,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../navigation/RootNavigator';
-
-interface Order {
-  id: string;
-  userId: string;
-  userName: string;
-  items: OrderItem[];
-  total: number;
-  status: 'pending' | 'confirmed' | 'preparing' | 'delivering' | 'delivered' | 'cancelled';
-  paymentMethod: 'credit' | 'pix' | 'cash';
-  createdAt: Date;
-  deliveredAt?: Date;
-}
-
-interface OrderItem {
-  id: string;
-  productId: string;
-  productName: string;
-  quantity: number;
-  price: number;
-  total: number;
-}
+import { orderService, Order } from '../../services/orderService';
+import { useUser } from '../../context/UserContext';
 
 type SalesReportScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -44,134 +25,66 @@ const { width } = Dimensions.get('window');
 
 export default function SalesReportScreen() {
   const navigation = useNavigation<SalesReportScreenNavigationProp>();
+  const { user } = useUser();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'year'>('week');
 
-  // Dados simulados para demonstração
+  // Carregar dados do Firebase
   useEffect(() => {
-    const mockOrders: Order[] = [
-      {
-        id: '1',
-        userId: 'user1',
-        userName: 'João Silva',
-        items: [
-          { 
-            id: '1', 
-            productId: '1', 
-            productName: 'X-Burger',
-            quantity: 2, 
-            price: 15.00,
-            total: 30.00
-          },
-          { 
-            id: '2', 
-            productId: '2', 
-            productName: 'Pizza Margherita',
-            quantity: 1, 
-            price: 25.00,
-            total: 25.00
-          },
-        ],
-        total: 55.00,
-        status: 'delivered',
-        paymentMethod: 'credit',
-        createdAt: new Date('2024-01-15'),
-      },
-      {
-        id: '2',
-        userId: 'user2',
-        userName: 'Maria Santos',
-        items: [
-          { 
-            id: '3', 
-            productId: '3', 
-            productName: 'Batata Frita',
-            quantity: 3, 
-            price: 12.00,
-            total: 36.00
-          },
-        ],
-        total: 36.00,
-        status: 'delivered',
-        paymentMethod: 'pix',
-        createdAt: new Date('2024-01-14'),
-      },
-      {
-        id: '3',
-        userId: 'user3',
-        userName: 'Pedro Costa',
-        items: [
-          { 
-            id: '4', 
-            productId: '1', 
-            productName: 'X-Burger',
-            quantity: 1, 
-            price: 15.00,
-            total: 15.00
-          },
-          { 
-            id: '5', 
-            productId: '4', 
-            productName: 'Refrigerante',
-            quantity: 2, 
-            price: 18.00,
-            total: 36.00
-          },
-        ],
-        total: 51.00,
-        status: 'pending',
-        paymentMethod: 'cash',
-        createdAt: new Date('2024-01-13'),
-      },
-      {
-        id: '4',
-        userId: 'user4',
-        userName: 'Ana Oliveira',
-        items: [
-          { 
-            id: '6', 
-            productId: '5', 
-            productName: 'Sorvete',
-            quantity: 2, 
-            price: 8.00,
-            total: 16.00
-          },
-        ],
-        total: 16.00,
-        status: 'delivered',
-        paymentMethod: 'pix',
-        createdAt: new Date('2024-01-12'),
-      },
-    ];
-
-    setOrders(mockOrders);
-    setLoading(false);
+    loadOrders();
   }, []);
+
+  const loadOrders = async () => {
+    try {
+      setLoading(true);
+      const allOrders = await orderService.getAllOrders();
+      setOrders(allOrders);
+    } catch (error) {
+      console.error('Erro ao carregar pedidos:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const completedOrders = orders.filter(order => order.status === 'delivered');
   const pendingOrders = orders.filter(order => order.status === 'pending');
   const totalRevenue = completedOrders.reduce((sum, order) => sum + order.total, 0);
   const averageOrderValue = completedOrders.length > 0 ? totalRevenue / completedOrders.length : 0;
 
-  // Top produtos (simulado)
-  const topProducts = [
-    { name: 'X-Burger', sales: 45, revenue: 675.00 },
-    { name: 'Pizza Margherita', sales: 32, revenue: 640.00 },
-    { name: 'Batata Frita', sales: 28, revenue: 280.00 },
-    { name: 'Refrigerante', sales: 25, revenue: 125.00 },
-  ];
+  // Calcular top produtos baseado nos dados reais
+  const productStats = new Map();
+  orders.forEach(order => {
+    order.items.forEach(item => {
+      const existing = productStats.get(item.productName) || { sales: 0, revenue: 0 };
+      productStats.set(item.productName, {
+        sales: existing.sales + item.quantity,
+        revenue: existing.revenue + item.total
+      });
+    });
+  });
 
-  // Receita por dia (últimos 7 dias)
-  const revenueByDay = [
-    { day: 'Seg', revenue: 120.00 },
-    { day: 'Ter', revenue: 85.00 },
-    { day: 'Qua', revenue: 150.00 },
-    { day: 'Qui', revenue: 200.00 },
-    { day: 'Sex', revenue: 180.00 },
-    { day: 'Sáb', revenue: 220.00 },
-    { day: 'Dom', revenue: 160.00 },
-  ];
+  const topProducts = Array.from(productStats.entries())
+    .map(([name, stats]) => ({ name, ...stats }))
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 4);
+
+  // Calcular receita por dia baseado nos dados reais
+  const revenueByDayMap = new Map();
+  const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  
+  daysOfWeek.forEach(day => revenueByDayMap.set(day, 0));
+  
+  orders.forEach(order => {
+    const dayOfWeek = daysOfWeek[order.createdAt.getDay()];
+    const existing = revenueByDayMap.get(dayOfWeek) || 0;
+    revenueByDayMap.set(dayOfWeek, existing + order.total);
+  });
+
+  const revenueByDay = daysOfWeek.map(day => ({
+    day,
+    revenue: revenueByDayMap.get(day) || 0
+  }));
 
   const getStatusColor = (status: string) => {
     switch (status) {

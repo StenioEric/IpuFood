@@ -1,4 +1,13 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  User as FirebaseUser
+} from 'firebase/auth';
+import { auth } from '../services/firebase';
+import { userService } from '../services/userService';
 
 interface User {
   id: string;
@@ -12,9 +21,10 @@ interface User {
 interface UserContextType {
   user: User | null;
   isAdmin: boolean;
-  login: (user: User) => void;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, userData: Partial<User>) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -25,34 +35,73 @@ interface UserProviderProps {
 
 export function UserProvider({ children }: UserProviderProps) {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const isAdmin = user?.role === 'admin';
 
-  const login = (userData: User) => {
-    setUser(userData);
+  // Firebase Auth State Listener
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+      console.log('🔐 UserContext: Firebase user changed:', firebaseUser?.uid);
+      if (firebaseUser) {
+        // Buscar dados do usuário no Firestore
+        const userData = await userService.getUserById(firebaseUser.uid);
+        console.log('👤 UserContext: User data loaded:', userData);
+        if (userData) {
+          setUser(userData);
+        }
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      console.error('Erro no login:', error);
+      throw error;
+    }
   };
 
   const register = async (email: string, password: string, userData: Partial<User>) => {
-    // Simulação de registro - em produção, isso seria uma chamada de API
-    const newUser: User = {
-      id: Date.now().toString(),
-      name: userData.name || 'Usuário',
-      email,
-      role: 'user',
-      phone: userData.phone || '',
-      address: userData.address || '',
-    };
-    
-    setUser(newUser);
+    try {
+      const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, email, password);
+      
+      const newUser: User = {
+        id: firebaseUser.uid,
+        name: userData.name || 'Usuário',
+        email,
+        role: 'user',
+        phone: userData.phone || '',
+        address: userData.address || '',
+      };
+
+      // Salvar no Firestore
+      await userService.createUser(firebaseUser.uid, newUser);
+    } catch (error) {
+      console.error('Erro no registro:', error);
+      throw error;
+    }
   };
 
-  const logout = () => {
-    setUser(null);
+  const logout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Erro no logout:', error);
+      throw error;
+    }
   };
 
   const value: UserContextType = {
     user,
     isAdmin,
+    loading,
     login,
     register,
     logout,
