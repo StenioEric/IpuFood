@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { styles } from './styles';
 
 import {
@@ -18,6 +18,7 @@ import { RootStackParamList } from '../../../navigation/RootNavigator';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
+import { useUser } from '../../../context/UserContext';
 
 type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>;
 
@@ -33,6 +34,10 @@ const schema = yup.object({
 
 export default function LoginScreen() {
   const navigation = useNavigation<LoginScreenNavigationProp>();
+  const { login } = useUser();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   const {
     control,
     handleSubmit,
@@ -41,9 +46,18 @@ export default function LoginScreen() {
     resolver: yupResolver(schema)
   });
 
-  const onSubmit = (data: LoginFormData) => {
-    // Lógica de autenticação aqui
-    navigation.navigate('Menu');
+  const onSubmit = async (data: LoginFormData) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      await login(data.email, data.senha);
+      navigation.navigate('Menu');
+    } catch (error: any) {
+      console.error('Erro no login:', error);
+      setError('Email ou senha incorretos');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -100,9 +114,20 @@ export default function LoginScreen() {
               {errors.senha && <Text style={styles.labelError}>{errors.senha.message}</Text>}
             </View>
 
+            {/* Mensagem de Erro */}
+            {error && (
+              <Text style={styles.errorText}>{error}</Text>
+            )}
+
             {/* Botão Continuar */}
-            <TouchableOpacity style={styles.continueButton} onPress={handleSubmit(onSubmit)}>
-              <Text style={styles.continueButtonText}>Continuar</Text>
+            <TouchableOpacity 
+              style={[styles.continueButton, isLoading && styles.continueButtonDisabled]} 
+              onPress={handleSubmit(onSubmit)}
+              disabled={isLoading}
+            >
+              <Text style={styles.continueButtonText}>
+                {isLoading ? 'Entrando...' : 'Continuar'}
+              </Text>
             </TouchableOpacity>
 
             {/* Links */}

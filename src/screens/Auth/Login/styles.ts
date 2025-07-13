@@ -114,4 +114,14 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 5,
   },
+  errorText: {
+    color: '#FFD700',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 10,
+    fontWeight: '500',
+  },
+  continueButtonDisabled: {
+    opacity: 0.6,
+  },
 }); 

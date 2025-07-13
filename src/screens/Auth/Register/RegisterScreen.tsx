@@ -9,6 +9,8 @@ import {
   ScrollView,
   TextInput,
   Button,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,6 +21,9 @@ import { RootStackParamList } from "../../../navigation/RootNavigator";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import { auth } from '../../../services/firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { userService } from '../../../services/userService';
 
 type RegisterScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -26,22 +31,22 @@ type RegisterScreenNavigationProp = StackNavigationProp<
 >;
 
 type RegisterFormData = {
-  nome: string;
+  name: string;
   email: string;
-  celular: string;
-  endereco: string;
+  phone: string;
+  address: string;
   senha: string;
   confirmarSenha: string;
 };
 
 const schema = yup.object({
-  nome: yup.string().required("Informe seu nome"),
+  name: yup.string().required("Informe seu nome"),
   email: yup.string().email("Email inválido").required("Informe seu email"),
-  celular: yup
+  phone: yup
     .string()
-    .required("Informe seu celular")
-    .matches(/^\d{10,11}$/, "Celular inválido"),
-  endereco: yup.string().required("Informe seu endereço"),
+    .required("Informe seu telefone")
+    .matches(/^\(\d{2}\) \d{4,5}-\d{4}$/, "Telefone inválido - Use (11) 88888-8888"),
+  address: yup.string().required("Informe seu endereço"),
   senha: yup
     .string()
     .min(6, "A senha deve ter pelo menos 6 caracteres")
@@ -55,6 +60,7 @@ const schema = yup.object({
 export default function RegisterScreen() {
   const navigation = useNavigation<RegisterScreenNavigationProp>();
   const [showPassword, setShowPassword] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
 
   const {
     control,
@@ -64,14 +70,38 @@ export default function RegisterScreen() {
     resolver: yupResolver(schema),
   });
 
-  const onSubmit = (data: RegisterFormData) => {
-    navigation.navigate("Confirmation", {
-      title: "Bem-vindo !",
-      message:
-        "Sua conta foi criada com sucesso! Agora você pode fazer seus pedidos.",
-      buttonText: "Continuar",
-      navigateTo: "Menu",
-    });
+  const onSubmit = async (data: RegisterFormData) => {
+    setLoading(true);
+    try {
+      // 1. Cria usuário no Auth
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        data.email,
+        data.senha
+      );
+      const { uid } = userCredential.user;
+      
+      // 2. Salva dados no Firestore com os campos corretos
+      await userService.createUser(uid, {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        role: 'user',
+      });
+      
+      setLoading(false);
+      navigation.navigate('Confirmation', {
+        title: 'Bem-vindo !',
+        message:
+          'Sua conta foi criada com sucesso! Agora você pode fazer seus pedidos.',
+        buttonText: 'Continuar',
+        navigateTo: 'Menu',
+      });
+    } catch (error: any) {
+      setLoading(false);
+      Alert.alert('Erro ao cadastrar', error.message || 'Tente novamente.');
+    }
   };
 
   return (
@@ -94,7 +124,7 @@ export default function RegisterScreen() {
           <View style={styles.formContainer}>
             <Controller
               control={control}
-              name="nome"
+              name="name"
               defaultValue=""
               render={({ field: { onChange, value } }) => (
                 <View style={styles.inputContainer}>
@@ -105,8 +135,8 @@ export default function RegisterScreen() {
                     onChangeText={onChange}
                     autoCapitalize="words"
                   />
-                  {errors.nome && (
-                    <Text style={styles.labelError}>{errors.nome.message}</Text>
+                  {errors.name && (
+                    <Text style={styles.labelError}>{errors.name.message}</Text>
                   )}
                 </View>
               )}
@@ -138,20 +168,21 @@ export default function RegisterScreen() {
 
             <Controller
               control={control}
-              name="celular"
+              name="phone"
               defaultValue=""
               render={({ field: { onChange, value } }) => (
                 <View style={styles.inputContainer}>
-                  <Text style={styles.inputLabel}>Celular</Text>
+                  <Text style={styles.inputLabel}>Telefone</Text>
                   <TextInput
                     style={styles.input}
                     value={value}
                     onChangeText={onChange}
                     keyboardType="phone-pad"
+                    placeholder="(11) 88888-8888"
                   />
-                  {errors.celular && (
+                  {errors.phone && (
                     <Text style={styles.labelError}>
-                      {errors.celular.message}
+                      {errors.phone.message}
                     </Text>
                   )}
                 </View>
@@ -160,7 +191,7 @@ export default function RegisterScreen() {
 
             <Controller
               control={control}
-              name="endereco"
+              name="address"
               defaultValue=""
               render={({ field: { onChange, value } }) => (
                 <View style={styles.inputContainer}>
@@ -171,9 +202,9 @@ export default function RegisterScreen() {
                     onChangeText={onChange}
                     autoCapitalize="words"
                   />
-                  {errors.endereco && (
+                  {errors.address && (
                     <Text style={styles.labelError}>
-                      {errors.endereco.message}
+                      {errors.address.message}
                     </Text>
                   )}
                 </View>
@@ -230,8 +261,13 @@ export default function RegisterScreen() {
             <TouchableOpacity
               style={styles.registerButton}
               onPress={handleSubmit(onSubmit)}
+              disabled={loading}
             >
-              <Text style={styles.registerButtonText}>Registrar</Text>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.registerButtonText}>Registrar</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>

@@ -7,12 +7,16 @@ import {
   SafeAreaView,
   ScrollView,
   Alert,
+  Image,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../navigation/RootNavigator';
+import { useCart } from '../../context/CartContext';
+import { useUser } from '../../context/UserContext';
+import { orderService } from '../../services/orderService';
 
 type CartScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Cart'>;
 
@@ -26,120 +30,83 @@ interface CartItem {
 
 export default function CartScreen() {
   const navigation = useNavigation<CartScreenNavigationProp>();
-  
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    {
-      id: '1',
-      name: 'x-tudo',
-      price: 16.48,
-      quantity: 1,
-      image: '🍔',
-    },
-    {
-      id: '2',
-      name: 'x-tudo',
-      price: 16.48,
-      quantity: 1,
-      image: '🍔',
-    },
-    {
-      id: '3',
-      name: 'x-tudo',
-      price: 16.48,
-      quantity: 1,
-      image: '🍔',
-    },
-  ]);
+  const { cart, removeFromCart, clearCart } = useCart();
+  const { user } = useUser();
+  const [loading, setLoading] = useState(false);
 
   const updateQuantity = (id: string, change: number) => {
-    setCartItems(items =>
-      items.map(item => {
-        if (item.id === id) {
-          const newQuantity = Math.max(1, item.quantity + change);
-          return { ...item, quantity: newQuantity };
-        }
-        return item;
-      })
-    );
+    // Atualização de quantidade pode ser implementada no contexto se desejar
   };
 
-  const removeItem = (id: string) => {
-    Alert.alert(
-      'Remover item',
-      'Tem certeza que deseja remover este item do carrinho?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Remover',
-          style: 'destructive',
-          onPress: () => {
-            setCartItems(items => items.filter(item => item.id !== id));
-          }
-        }
-      ]
-    );
+  const handleRemove = (id: string) => {
+    removeFromCart(id);
   };
 
   const calculateTotal = () => {
-    return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
   };
 
-  const handleChoosePayment = () => {
-    // Navegar para tela de métodos de pagamento
-    navigation.navigate('Payment');
+  const handleCheckout = async () => {
+    if (!user) {
+      Alert.alert('Faça login para finalizar o pedido!');
+      return;
+    }
+    if (cart.length === 0) {
+      Alert.alert('Seu carrinho está vazio!');
+      return;
+    }
+    setLoading(true);
+    try {
+      await orderService.createOrder({
+        userId: user.id,
+        userName: user.name,
+        items: cart.map(item => ({
+          id: item.product.id,
+          productId: item.product.id,
+          productName: item.product.name,
+          quantity: item.quantity,
+          price: item.product.price,
+          total: item.product.price * item.quantity,
+        })),
+        total: calculateTotal(),
+        status: 'pending',
+        paymentMethod: 'credit', // ou permitir escolha
+        createdAt: new Date(),
+      });
+      clearCart();
+      Alert.alert('Pedido realizado com sucesso!');
+      navigation.navigate('Menu');
+    } catch (e) {
+      Alert.alert('Erro ao finalizar pedido');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const renderCartItem = (item: CartItem) => (
-    <View key={item.id} style={styles.cartItem}>
-      {/* Product Image */}
+  const renderCartItem = (item: { product: any; quantity: number }) => (
+    <View key={item.product.id} style={styles.cartItem}>
       <View style={styles.productImageContainer}>
-        <Text style={styles.productImage}>{item.image}</Text>
+        {item.product.imageUrl ? (
+          <Image source={{ uri: item.product.imageUrl }} style={{ width: 40, height: 40, borderRadius: 20 }} />
+        ) : (
+          <Text style={styles.productImage}>🍔</Text>
+        )}
       </View>
-
-      {/* Product Info */}
       <View style={styles.productInfo}>
-        <Text style={styles.productName}>{item.name}</Text>
-        
-        {/* Quantity Controls */}
-        <View style={styles.quantityControls}>
-          <TouchableOpacity 
-            style={styles.quantityButton}
-            onPress={() => updateQuantity(item.id, -1)}
-          >
-            <Ionicons name="remove" size={16} color="#666" />
-          </TouchableOpacity>
-          
-          <Text style={styles.quantityText}>{item.quantity}</Text>
-          
-          <TouchableOpacity 
-            style={styles.quantityButton}
-            onPress={() => updateQuantity(item.id, 1)}
-          >
-            <Ionicons name="add" size={16} color="#666" />
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.productName}>{item.product.name}</Text>
+        <Text style={styles.productDescription}>{item.product.description}</Text>
+        <Text style={styles.itemPrice}>R$ {item.product.price.toFixed(2)}</Text>
+        <Text style={styles.quantityText}>Quantidade: {item.quantity}</Text>
       </View>
-
-      {/* Price and Remove */}
-      <View style={styles.rightSection}>
-        <Text style={styles.itemPrice}>
-          R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
-        </Text>
-        <TouchableOpacity 
-          style={styles.removeButton}
-          onPress={() => removeItem(item.id)}
-        >
-          <Ionicons name="trash-outline" size={20} color="#666" />
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity style={styles.removeButton} onPress={() => handleRemove(item.product.id)}>
+        <Ionicons name="trash-outline" size={20} color="#666" />
+      </TouchableOpacity>
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
-      
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#333" />
@@ -147,17 +114,12 @@ export default function CartScreen() {
         <Text style={styles.headerTitle}>Pedidos</Text>
         <View></View>
       </View>
-
-      {/* Cart Content */}
       <View style={styles.content}>
-        {cartItems.length > 0 ? (
+        {cart.length > 0 ? (
           <>
-            {/* Cart Items */}
             <ScrollView style={styles.cartList} showsVerticalScrollIndicator={false}>
-              {cartItems.map(renderCartItem)}
+              {cart.map(renderCartItem)}
             </ScrollView>
-
-            {/* Total Section */}
             <View style={styles.totalSection}>
               <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>Total:</Text>
@@ -166,10 +128,8 @@ export default function CartScreen() {
                 </Text>
               </View>
             </View>
-
-            {/* Choose Payment Button */}
-            <TouchableOpacity style={styles.paymentButton} onPress={handleChoosePayment}>
-              <Text style={styles.paymentButtonText}>Escolher método de pagamento</Text>
+            <TouchableOpacity style={styles.paymentButton} onPress={handleCheckout} disabled={loading}>
+              <Text style={styles.paymentButtonText}>{loading ? 'Enviando...' : 'Finalizar Pedido'}</Text>
             </TouchableOpacity>
           </>
         ) : (
@@ -252,6 +212,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
     marginBottom: 10,
+  },
+  productDescription: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 5,
   },
   quantityControls: {
     flexDirection: 'row',

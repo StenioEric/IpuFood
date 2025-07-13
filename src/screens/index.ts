@@ -6,3 +6,5 @@ export { default as ConfirmationScreen } from './Confirmation/ConfirmationScreen
 export { default as MenuScreen } from './Menu/MenuScreen'; 
 export { default as PaymentScreen } from './Payment/PaymentScreen'; 
 export { default as ProductDetailScreen } from './Product/ProductDetailScreen';
+export { default as SalesReportScreen } from './Reports/SalesReportScreen';
+export { default as PurchaseReportScreen } from './Reports/PurchaseReportScreen';
