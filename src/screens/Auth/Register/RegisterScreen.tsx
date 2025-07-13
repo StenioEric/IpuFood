@@ -21,9 +21,9 @@ import { RootStackParamList } from "../../../navigation/RootNavigator";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { auth } from '../../../services/firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { userService } from '../../../services/userService';
+import { auth } from "../../../services/firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { userService } from "../../../services/userService";
 
 type RegisterScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -45,7 +45,11 @@ const schema = yup.object({
   phone: yup
     .string()
     .required("Informe seu telefone")
-    .matches(/^\(\d{2}\) \d{4,5}-\d{4}$/, "Telefone inválido - Use (11) 88888-8888"),
+    .matches(
+      /^\d{11}$/,
+      "Telefone inválido - Exemplo: 84981568463"
+    ),
+
   address: yup.string().required("Informe seu endereço"),
   senha: yup
     .string()
@@ -80,27 +84,26 @@ export default function RegisterScreen() {
         data.senha
       );
       const { uid } = userCredential.user;
-      
       // 2. Salva dados no Firestore com os campos corretos
       await userService.createUser(uid, {
         name: data.name,
         email: data.email,
         phone: data.phone,
         address: data.address,
-        role: 'user',
+        role: "user",
       });
-      
+
       setLoading(false);
-      navigation.navigate('Confirmation', {
-        title: 'Bem-vindo !',
+      navigation.navigate("Confirmation", {
+        title: "Bem-vindo !",
         message:
-          'Sua conta foi criada com sucesso! Agora você pode fazer seus pedidos.',
-        buttonText: 'Continuar',
-        navigateTo: 'Menu',
+          "Sua conta foi criada com sucesso! Agora você pode fazer seus pedidos.",
+        buttonText: "Continuar",
+        navigateTo: "Menu",
       });
     } catch (error: any) {
       setLoading(false);
-      Alert.alert('Erro ao cadastrar', error.message || 'Tente novamente.');
+      Alert.alert("Erro ao cadastrar", error.message || "Tente novamente.");
     }
   };
 
@@ -141,7 +144,6 @@ export default function RegisterScreen() {
                 </View>
               )}
             />
-
             <Controller
               control={control}
               name="email"
@@ -165,7 +167,6 @@ export default function RegisterScreen() {
                 </View>
               )}
             />
-
             <Controller
               control={control}
               name="phone"
@@ -178,7 +179,6 @@ export default function RegisterScreen() {
                     value={value}
                     onChangeText={onChange}
                     keyboardType="phone-pad"
-                    placeholder="(11) 88888-8888"
                   />
                   {errors.phone && (
                     <Text style={styles.labelError}>
@@ -188,7 +188,6 @@ export default function RegisterScreen() {
                 </View>
               )}
             />
-
             <Controller
               control={control}
               name="address"
@@ -210,7 +209,6 @@ export default function RegisterScreen() {
                 </View>
               )}
             />
-
             <Controller
               control={control}
               name="senha"
@@ -218,13 +216,13 @@ export default function RegisterScreen() {
               render={({ field: { onChange, value } }) => (
                 <View style={styles.inputContainer}>
                   <Text style={styles.inputLabel}>Senha</Text>
-                    <TextInput
-                      style={styles.input}
-                      value={value}
-                      onChangeText={onChange}
-                      secureTextEntry={!showPassword}
-                      autoCapitalize="none"
-                    />
+                  <TextInput
+                    style={styles.input}
+                    value={value}
+                    onChangeText={onChange}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                  />
                   {errors.senha && (
                     <Text style={styles.labelError}>
                       {errors.senha.message}
@@ -233,7 +231,6 @@ export default function RegisterScreen() {
                 </View>
               )}
             />
-
             <Controller
               control={control}
               name="confirmarSenha"
@@ -256,7 +253,6 @@ export default function RegisterScreen() {
                 </View>
               )}
             />
-
             {/* Botão Registrar */}
             <TouchableOpacity
               style={styles.registerButton}
