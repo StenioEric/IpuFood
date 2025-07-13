@@ -5,7 +5,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   SafeAreaView,
   ScrollView,
 } from 'react-native';
@@ -171,15 +170,6 @@ export default function PaymentScreen() {
             </View>
           </View>
         </ScrollView>
-
-        {/* Total */}
-        <View style={styles.totalSection}>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total:</Text>
-            <Text style={styles.totalPrice}>R$ {total.toFixed(2).replace('.', ',')}</Text>
-          </View>
-        </View>
-
         {/* Payment Methods */}
         <Text style={styles.sectionTitle}>Método de Pagamento</Text>
         <View style={styles.paymentMethods}>

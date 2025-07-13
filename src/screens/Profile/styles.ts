@@ -4,13 +4,13 @@ export const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FF5A5F',
+    paddingTop: 35,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 15,
   },
   backButton: {
     padding: 5,
@@ -21,7 +21,7 @@ export const styles = StyleSheet.create({
   profileCard: {
     flex: 1,
     backgroundColor: 'white',
-    marginTop: 20,
+    marginTop: 15,
     marginHorizontal: 20,
     marginBottom: 40,
     borderRadius: 25,
@@ -63,7 +63,7 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   infoSection: {
-    marginBottom: 20,
+    marginBottom:0,
   },
   infoLabel: {
     fontSize: 14,
@@ -123,7 +123,41 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  labelError: {
+    color: '#FF5A5F',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 10,
+  },
   buttonIcon: {
     marginRight: 8,
+  },
+  reportsSection: {
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  reportsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 15,
+  },
+  reportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F8F8',
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 15,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  reportButtonText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+    marginLeft: 12,
+    fontWeight: '500',
   },
 }); 

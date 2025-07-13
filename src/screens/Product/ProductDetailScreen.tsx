@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { styles } from './styles';
 
 import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   SafeAreaView,
   ScrollView,
-  Image,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { productService, Product } from '../../services/productService';
+import { useCart } from '../../context/CartContext';
 
 interface ProductDetailParams {
   id: string;
@@ -26,9 +26,26 @@ interface ProductDetailParams {
 export default function ProductDetailScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const params = route.params as ProductDetailParams;
-  
+  const { productId } = (route.params as any) || {};
+
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+
+  const { addToCart } = useCart();
+
+  useEffect(() => {
+    if (productId) {
+      loadProduct();
+    }
+  }, [productId]);
+
+  const loadProduct = async () => {
+    setLoading(true);
+    const data = await productService.getProductById(productId);
+    setProduct(data);
+    setLoading(false);
+  };
 
   const increaseQuantity = () => {
     setQuantity(prev => prev + 1);
@@ -40,11 +57,11 @@ export default function ProductDetailScreen() {
     }
   };
 
-  const addToCart = () => {
-    // Aqui você implementará a lógica para adicionar ao carrinho
-    console.log(`Adicionando ${quantity}x ${params.name} ao carrinho`);
-    // Pode navegar de volta ou mostrar uma confirmação
-    navigation.goBack();
+  const addToCartHandler = () => {
+    if (product) {
+      addToCart(product, quantity);
+      navigation.goBack();
+    }
   };
 
   return (
@@ -70,20 +87,17 @@ export default function ProductDetailScreen() {
 
         {/* Product Info */}
         <View style={styles.productInfo}>
-          <Text style={styles.productName}>{params?.name || 'Cheeseburger Wendy\'s Burger'}</Text>
+          <Text style={styles.productName}>{product?.name || 'Cheeseburger Wendy\'s Burger'}</Text>
           
           {/* Rating and Time */}
           <View style={styles.ratingRow}>
-            <View style={styles.ratingContainer}>
-              <Ionicons name="star" size={16} color="#FFD700" />
-              <Text style={styles.ratingText}>{params?.rating || '4.9'}</Text>
-            </View>
+            {/* Rating removido pois não existe no modelo real */}
             <Text style={styles.timeText}>26 mins</Text>
           </View>
 
           {/* Description */}
           <Text style={styles.description}>
-            {params?.description || 'The Cheeseburger Wendy\'s Burger is a classic fast food burger that packs a punch of flavor in every bite. Made with a juicy beef patty cooked to perfection, it\'s topped with melted American cheese, crispy lettuce, ripe tomato, and crunchy pickles.'}
+            {product?.description || 'The Cheeseburger Wendy\'s Burger is a classic fast food burger that packs a punch of flavor in every bite. Made with a juicy beef patty cooked to perfection, it\'s topped with melted American cheese, crispy lettuce, ripe tomato, and crunchy pickles.'}
           </Text>
 
           {/* Portions Section */}
@@ -99,10 +113,10 @@ export default function ProductDetailScreen() {
           </View>
 
           {/* Price */}
-          <Text style={styles.price}>R$ {((params?.price || 4.9) * 2.5 * quantity).toFixed(2).replace('.', ',')}</Text>
+          <Text style={styles.price}>R$ {((product?.price || 4.9) * 2.5 * quantity).toFixed(2).replace('.', ',')}</Text>
 
           {/* Add Button */}
-          <TouchableOpacity style={styles.addButton} onPress={addToCart}>
+          <TouchableOpacity style={styles.addButton} onPress={addToCartHandler}>
             <Text style={styles.addButtonText}>Adicionar</Text>
           </TouchableOpacity>
         </View>

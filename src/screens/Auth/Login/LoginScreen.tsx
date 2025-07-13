@@ -6,9 +6,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   SafeAreaView,
-  Image,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -16,19 +14,56 @@ import { StatusBar } from 'expo-status-bar';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../../navigation/RootNavigator';
-import { AntDesign, FontAwesome } from '@expo/vector-icons';
+
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+import { useUser } from '../../../context/UserContext';
 
 type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>;
 
+type LoginFormData = {
+  email: string;
+  senha: string;
+};
+
+const schema = yup.object({
+  email: yup.string().email('Email inválido').required('Informe seu email'),
+  senha: yup.string().min(6, 'A senha deve ter pelo menos 6 caracteres').required('Informe sua senha'),
+});
+
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
   const navigation = useNavigation<LoginScreenNavigationProp>();
+  const { login } = useUser();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const {
+    control,
+    handleSubmit,
+    formState: { errors }
+  } = useForm<LoginFormData>({
+    resolver: yupResolver(schema)
+  });
+
+  const onSubmit = async (data: LoginFormData) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      await login(data.email, data.senha);
+      navigation.navigate('Menu');
+    } catch (error: any) {
+      console.error('Erro no login:', error);
+      setError('Email ou senha incorretos');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.keyboardContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
@@ -42,41 +77,58 @@ export default function LoginScreen() {
           <View style={styles.formContainer}>
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Email</Text>
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
+              <Controller
+                control={control}
+                name="email"
+                defaultValue=""
+                render={({ field: { onChange, value } }) => (
+                  <TextInput
+                    style={styles.input}
+                    value={value}
+                    onChangeText={onChange}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                )}
               />
+              {errors.email && <Text style={styles.labelError}>{errors.email.message}</Text>}
             </View>
 
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Senha</Text>
-              <TextInput
-                style={styles.input}
-                value={senha}
-                onChangeText={setSenha}
-                secureTextEntry={true}
-                autoCapitalize="none"
+              <Controller
+                control={control}
+                name="senha"
+                defaultValue=""
+                render={({ field: { onChange, value } }) => (
+                  <TextInput
+                    style={styles.input}
+                    value={value}
+                    onChangeText={onChange}
+                    secureTextEntry={true}
+                    autoCapitalize="none"
+                  />
+                )}
               />
+              {errors.senha && <Text style={styles.labelError}>{errors.senha.message}</Text>}
             </View>
+
+            {/* Mensagem de Erro */}
+            {error && (
+              <Text style={styles.errorText}>{error}</Text>
+            )}
 
             {/* Botão Continuar */}
-            <TouchableOpacity style={styles.continueButton} onPress={() => navigation.navigate('Menu')}>
-              <Text style={styles.continueButtonText}>Continuar</Text>
+            <TouchableOpacity 
+              style={[styles.continueButton, isLoading && styles.continueButtonDisabled]} 
+              onPress={handleSubmit(onSubmit)}
+              disabled={isLoading}
+            >
+              <Text style={styles.continueButtonText}>
+                {isLoading ? 'Entrando...' : 'Continuar'}
+              </Text>
             </TouchableOpacity>
-
-            {/* Login Social */}
-            <View style={styles.socialContainer}>
-              <TouchableOpacity style={styles.socialButton}>
-                <AntDesign name="google" size={32} color="#4285F4" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.socialButton}>
-                <FontAwesome name="facebook" size={32} color="#1877F2" />
-              </TouchableOpacity>
-            </View>
 
             {/* Links */}
             <View style={styles.linksContainer}>
