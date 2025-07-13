@@ -10,19 +10,16 @@ import { CartScreen } from '../screens';
 import { PaymentScreen } from '../screens';
 import { ConfirmationScreen } from '../screens';
 import { SalesReportScreen, PurchaseReportScreen } from '../screens';
+import ProductListScreen from '../screens/Product/ProductListScreen';
+import ProductEditScreen from '../screens/Product/ProductEditScreen';
 
 export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   Menu: undefined;
-  ProductDetail: {
-    id: string;
-    name: string;
-    description: string;
-    price: number;
-    rating: number;
-    image: string;
-  };
+  ProductList: undefined;
+  ProductEdit: { productId?: string } | undefined;
+  ProductDetail: { productId: string };
   Profile: undefined;
   Cart: undefined;
   Payment: undefined;
@@ -49,6 +46,8 @@ export default function RootNavigator() {
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="Menu" component={MenuScreen} />
+      <Stack.Screen name="ProductList" component={ProductListScreen} />
+      <Stack.Screen name="ProductEdit" component={ProductEditScreen} />
       <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Cart" component={CartScreen} />
