@@ -8,6 +8,8 @@ import {
   SafeAreaView,
   ScrollView,
   TextInput,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,6 +21,7 @@ import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from 'yup'
 import { useUser } from "../../context/UserContext";
+import { userService } from "../../services/userService";
 
 type ProfileScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -26,47 +29,102 @@ type ProfileScreenNavigationProp = StackNavigationProp<
 >;
 
 type ProfileFormData = {
-  nome: string;
+  name: string;
   email: string;
-  localizacao: string;
-  telefone: string; 
-  senha: string;
+  address: string;
+  phone: string; 
 };
 
 const schema = yup.object({
-  nome: yup.string().required('Informe seu nome'),
+  name: yup.string().required('Informe seu nome'),
   email: yup.string().email('Email inválido').required('Informe seu email'),
-  localizacao: yup.string().required('Informe sua localização'),
-  telefone: yup
+  address: yup.string().required('Informe seu endereço'),
+  phone: yup
     .string()
     .required('Informe seu telefone')
-    .matches(/^\d{10,11}$/, 'Telefone inválido'),
-  senha: yup.string().min(6, 'A senha deve ter pelo menos 6 caracteres').required('Informe sua senha'),
+    .matches(/^\(\d{2}\) \d{4,5}-\d{4}$/, 'Telefone inválido - Use (11) 88888-8888'),
 });
 
 export default function ProfileScreen() {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
-  const { user } = useUser();
+  const { user, logout } = useUser();
   const [editing, setEditing] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const [userData, setUserData] = React.useState<any>(null);
+
   const {
     control,
     handleSubmit,
+    reset,
     formState:{errors}
-  } = useForm({resolver:yupResolver(schema)});
+  } = useForm<ProfileFormData>({
+    resolver: yupResolver(schema),
+    defaultValues: {
+      name: userData?.name || '',
+      email: userData?.email || '',
+      address: userData?.address || '',
+      phone: userData?.phone || '',
+    }
+  });
 
-  const handleLogout = () => {
-    // Aqui você implementaria a lógica de logout
-    navigation.navigate("Login");
+  // Carregar dados do usuário quando o componente montar
+  React.useEffect(() => {
+    const loadUserData = async () => {
+      if (user?.id) {
+        try {
+          const userDoc = await userService.getUserById(user.id);
+          if (userDoc) {
+            setUserData(userDoc);
+            reset({
+              name: userDoc.name,
+              email: userDoc.email,
+              address: userDoc.address,
+              phone: userDoc.phone,
+            });
+          }
+        } catch (error) {
+          console.error('Erro ao carregar dados do usuário:', error);
+        }
+      }
+    };
+
+    loadUserData();
+  }, [user?.id, reset]);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigation.navigate("Login");
+    } catch (error) {
+      Alert.alert('Erro', 'Erro ao fazer logout');
+    }
   };
 
   const handleEditProfile = () => {
-    // Aqui você navegaria para tela de edição de perfil
     setEditing(!editing);
   };
 
-  const handleSaveProfile = (data: ProfileFormData) => {
-    console.log(data);
-    setEditing(false);
+  const handleSaveProfile = async (data: ProfileFormData) => {
+    if (!user?.id) return;
+    
+    setLoading(true);
+    try {
+      await userService.updateUser(user.id, {
+        name: data.name,
+        email: data.email,
+        address: data.address,
+        phone: data.phone,
+      });
+      
+      // Atualizar dados locais
+      setUserData((prev: any) => ({ ...prev, ...data }));
+      setEditing(false);
+      Alert.alert('Sucesso', 'Perfil atualizado com sucesso!');
+    } catch (error) {
+      Alert.alert('Erro', 'Erro ao atualizar perfil');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -99,8 +157,7 @@ export default function ProfileScreen() {
         >
           <Controller
             control={control}
-            name="nome"
-            defaultValue=""
+            name="name"
             render={({ field: { onChange, value } }) => (
               <View style={styles.infoSection}>
                 <Text style={styles.infoLabel}>Nome</Text>
@@ -110,18 +167,18 @@ export default function ProfileScreen() {
                     value={value}
                     onChangeText={onChange}
                     editable={editing}
-                    placeholder="Denner Queijos Furos"
+                    placeholder="Seu nome"
                     placeholderTextColor="#999"
                   />
                 </View>
               </View>
             )}
           />
-          {errors.nome && <Text style={styles.labelError} >{errors.nome?.message}</Text> }
+          {errors.name && <Text style={styles.labelError} >{errors.name?.message}</Text> }
+          
           <Controller
             control={control}
             name="email"
-            defaultValue=""
             render={({ field: { onChange, value } }) => (
               <View style={styles.infoSection}>
                 <Text style={styles.infoLabel}>Email</Text>
@@ -131,39 +188,41 @@ export default function ProfileScreen() {
                     value={value}
                     onChangeText={onChange}
                     editable={editing}
-                    placeholder="denner@example.com"
+                    placeholder="seu@email.com"
                     placeholderTextColor="#999"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
                   />
                 </View>
               </View>
             )}
           />
           {errors.email && <Text style={styles.labelError} >{errors.email?.message}</Text> }
+          
           <Controller
             control={control}
-            name="localizacao"
-            defaultValue=""
+            name="address"
             render={({ field: { onChange, value } }) => (
               <View style={styles.infoSection}>
-                <Text style={styles.infoLabel}>Localização</Text>
+                <Text style={styles.infoLabel}>Endereço</Text>
                 <View style={styles.infoField}>
                   <TextInput
                     style={styles.infoText}
                     value={value}
                     onChangeText={onChange}
                     editable={editing}
-                    placeholder="Basta da Égua, Ipu - CE"
+                    placeholder="Seu endereço"
                     placeholderTextColor="#999"
                   />
                 </View>
               </View>
             )}
           />
-          {errors.localizacao && <Text style={styles.labelError} >{errors.localizacao?.message}</Text> }
+          {errors.address && <Text style={styles.labelError} >{errors.address?.message}</Text> }
+          
           <Controller
             control={control}
-            name="telefone"
-            defaultValue=""
+            name="phone"
             render={({ field: { onChange, value } }) => (
               <View style={styles.infoSection}>
                 <Text style={styles.infoLabel}>Telefone</Text>
@@ -173,36 +232,15 @@ export default function ProfileScreen() {
                     value={value}
                     onChangeText={onChange}
                     editable={editing}
-                    placeholder="Basta da Égua, Ipu - CE"
+                    placeholder="(11) 88888-8888"
                     placeholderTextColor="#999"
+                    keyboardType="phone-pad"
                   />
                 </View>
               </View>
             )}
           />
-          {errors.telefone && <Text style={styles.labelError} >{errors.telefone?.message}</Text> }
-          <Controller
-            control={control}
-            name="senha"
-            defaultValue=""
-            render={({ field: { onChange, value } }) => (
-              <View style={styles.infoSection}>
-                <Text style={styles.infoLabel}>Senha</Text>
-                <View style={styles.infoField}>
-                  <TextInput
-                    style={styles.passwordText}
-                    value={value}
-                    onChangeText={onChange}
-                    editable={editing}
-                    placeholder="********"
-                    placeholderTextColor="#999"
-                    secureTextEntry={true}
-                  />
-                </View>
-              </View>
-            )}
-          />
-          {errors.senha && <Text style={styles.labelError} >{errors.senha?.message}</Text> }
+          {errors.phone && <Text style={styles.labelError} >{errors.phone?.message}</Text> }
         </ScrollView>
 
         {/* Relatórios Section */}
@@ -249,14 +287,21 @@ export default function ProfileScreen() {
             <TouchableOpacity
               style={styles.editButton}
               onPress={handleSubmit(handleSaveProfile)}
+              disabled={loading}
             >
-              <Ionicons
-                name="save-outline"
-                size={20}
-                color="white"
-                style={styles.buttonIcon}
-              />
-              <Text style={styles.editButtonText}>Salvar</Text>
+              {loading ? (
+                <ActivityIndicator color="white" size="small" />
+              ) : (
+                <>
+                  <Ionicons
+                    name="save-outline"
+                    size={20}
+                    color="white"
+                    style={styles.buttonIcon}
+                  />
+                  <Text style={styles.editButtonText}>Salvar</Text>
+                </>
+              )}
             </TouchableOpacity>
           )}
 
