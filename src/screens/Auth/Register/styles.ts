@@ -4,6 +4,7 @@ export const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FF5A5F',
+    paddingTop:20,
   },
   scrollContainer: {
     flex: 1,
@@ -32,12 +33,12 @@ export const styles = StyleSheet.create({
     paddingBottom: 50,
   },
   inputContainer: {
-    marginBottom: 25,
+    marginBottom: 15,
   },
   inputLabel: {
     color: 'white',
     fontSize: 16,
-    marginBottom: 8,
+    marginBottom: 5,
     fontWeight: '500',
   },
   input: {
@@ -76,5 +77,11 @@ export const styles = StyleSheet.create({
     color: '#FF5A5F',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  labelError: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 5,
   },
 }); 

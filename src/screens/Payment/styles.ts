@@ -4,6 +4,7 @@ export const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
+    marginTop: 25,
   },
   header: {
     flexDirection: 'row',
@@ -12,6 +13,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
     backgroundColor: 'white',
+    marginTop: 25,
   },
   backButton: {
     padding: 5,
@@ -190,10 +192,15 @@ export const styles = StyleSheet.create({
     backgroundColor: '#4A90E2',
   },
   bottomSection: {
-    gap: 15,
+    display: 'flex',
+    // gap: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
   },
   priceSection: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
@@ -210,7 +217,7 @@ export const styles = StyleSheet.create({
   confirmButton: {
     backgroundColor: '#444',
     borderRadius: 15,
-    paddingVertical: 18,
+    padding: 20,
     alignItems: 'center',
   },
   confirmButtonText: {
