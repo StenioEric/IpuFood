@@ -18,6 +18,7 @@ import { RootStackParamList } from "../../navigation/RootNavigator";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from 'yup'
+import { useUser } from "../../context/UserContext";
 
 type ProfileScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -45,6 +46,7 @@ const schema = yup.object({
 
 export default function ProfileScreen() {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
+  const { user } = useUser();
   const [editing, setEditing] = React.useState(false);
   const {
     control,
@@ -202,6 +204,31 @@ export default function ProfileScreen() {
           />
           {errors.senha && <Text style={styles.labelError} >{errors.senha?.message}</Text> }
         </ScrollView>
+
+        {/* Relatórios Section */}
+        <View style={styles.reportsSection}>
+          <Text style={styles.reportsTitle}>Relatórios</Text>
+          
+          {user?.role === 'admin' && (
+            <TouchableOpacity
+              style={styles.reportButton}
+              onPress={() => navigation.navigate('SalesReport')}
+            >
+              <Ionicons name="trending-up" size={20} color="#FF6B35" />
+              <Text style={styles.reportButtonText}>Relatório de Vendas</Text>
+              <Ionicons name="chevron-forward" size={20} color="#999" />
+            </TouchableOpacity>
+          )}
+          
+          <TouchableOpacity
+            style={styles.reportButton}
+            onPress={() => navigation.navigate('PurchaseReport')}
+          >
+            <Ionicons name="bag" size={20} color="#4CAF50" />
+            <Text style={styles.reportButtonText}>Meus Pedidos</Text>
+            <Ionicons name="chevron-forward" size={20} color="#999" />
+          </TouchableOpacity>
+        </View>
 
         {/* Action Buttons */}
         <View style={styles.actionButtons}>

@@ -132,4 +132,32 @@ export const styles = StyleSheet.create({
   buttonIcon: {
     marginRight: 8,
   },
+  reportsSection: {
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  reportsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 15,
+  },
+  reportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F8F8',
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 15,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  reportButtonText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+    marginLeft: 12,
+    fontWeight: '500',
+  },
 }); 

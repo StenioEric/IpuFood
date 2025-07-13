@@ -9,6 +9,7 @@ import { ProfileScreen } from '../screens';
 import { CartScreen } from '../screens';
 import { PaymentScreen } from '../screens';
 import { ConfirmationScreen } from '../screens';
+import { SalesReportScreen, PurchaseReportScreen } from '../screens';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -31,6 +32,8 @@ export type RootStackParamList = {
     buttonText?: string;
     navigateTo?: keyof RootStackParamList;
   };
+  SalesReport: undefined;
+  PurchaseReport: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -51,6 +54,8 @@ export default function RootNavigator() {
       <Stack.Screen name="Cart" component={CartScreen} />
       <Stack.Screen name="Payment" component={PaymentScreen} />
       <Stack.Screen name="Confirmation" component={ConfirmationScreen} />
+      <Stack.Screen name="SalesReport" component={SalesReportScreen} />
+      <Stack.Screen name="PurchaseReport" component={PurchaseReportScreen} />
     </Stack.Navigator>
   );
 } 
