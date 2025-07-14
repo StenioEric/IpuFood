@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
+  Image,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
@@ -73,7 +74,7 @@ export default function ProductDetailScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>product 1</Text>
+        <Text style={styles.headerTitle}>Detalhes do Produto</Text>
         <TouchableOpacity style={styles.searchButton}>
           <Ionicons name="search" size={24} color="#333" />
         </TouchableOpacity>
@@ -82,7 +83,11 @@ export default function ProductDetailScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Product Image */}
         <View style={styles.imageContainer}>
-          <Text style={styles.productImage}>🍔</Text>
+          {product?.imageUrl ? (
+            <Image source={{ uri: product.imageUrl }} style={{ width: 120, height: 120, borderRadius: 60 }} />
+          ) : (
+            <Text style={styles.productImage}>🍔</Text>
+          )}
         </View>
 
         {/* Product Info */}
@@ -113,7 +118,7 @@ export default function ProductDetailScreen() {
           </View>
 
           {/* Price */}
-          <Text style={styles.price}>R$ {((product?.price || 4.9) * 2.5 * quantity).toFixed(2).replace('.', ',')}</Text>
+          <Text style={styles.price}>R$ {((product?.price || 4.9) * quantity).toFixed(2).replace('.', ',')}</Text>
 
           {/* Add Button */}
           <TouchableOpacity style={styles.addButton} onPress={addToCartHandler}>
