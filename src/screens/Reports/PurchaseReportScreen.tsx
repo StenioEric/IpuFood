@@ -104,6 +104,10 @@ export default function PurchaseReportScreen() {
     spent: spendingByDayMap.get(day) || 0
   }));
 
+  // Normalização para o gráfico
+  const maxSpent = Math.max(...spendingByDay.map(d => d.spent), 1); // nunca 0
+  const maxBarHeight = 100; // px
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'delivered':
@@ -233,7 +237,7 @@ export default function PurchaseReportScreen() {
                 <View 
                   style={[
                     styles.chartBarFill, 
-                    { height: day.spent > 0 ? (day.spent / 60) * 100 : 5 }
+                    { height: day.spent > 0 ? (day.spent / maxSpent) * maxBarHeight : 5 }
                   ]} 
                 />
                 <Text style={styles.chartLabel}>{day.day}</Text>

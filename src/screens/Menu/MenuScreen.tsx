@@ -36,7 +36,7 @@ export default function MenuScreen() {
   const [searchText, setSearchText] = useState('');
   const [menuItems, setMenuItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const { isAdmin } = useUser();
+  const { isAdmin, user } = useUser();
 
   useEffect(() => {
     loadProducts();
@@ -144,7 +144,16 @@ export default function MenuScreen() {
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Menu')}>
           <Ionicons name="home" size={24} color="white" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('PurchaseReport')}>
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => {
+            if (user?.role === 'admin') {
+              navigation.navigate('SalesReport');
+            } else {
+              navigation.navigate('PurchaseReport');
+            }
+          }}
+        >
           <Ionicons name="receipt-outline" size={24} color="white" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>

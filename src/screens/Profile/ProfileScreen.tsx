@@ -22,6 +22,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from 'yup'
 import { useUser } from "../../context/UserContext";
 import { userService } from "../../services/userService";
+import { orderService, Order } from '../../services/orderService';
 
 type ProfileScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -51,6 +52,8 @@ export default function ProfileScreen() {
   const [editing, setEditing] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [userData, setUserData] = React.useState<any>(null);
+  const [adminOrders, setAdminOrders] = React.useState<Order[]>([]);
+  const [ordersLoading, setOrdersLoading] = React.useState(false);
 
   const {
     control,
@@ -91,6 +94,23 @@ export default function ProfileScreen() {
     loadUserData();
   }, [user?.id, reset]);
 
+  // Carregar pedidos para admin
+  React.useEffect(() => {
+    const fetchOrders = async () => {
+      if (user?.role === 'admin') {
+        setOrdersLoading(true);
+        try {
+          const allOrders = await orderService.getAllOrders();
+          setAdminOrders(allOrders.filter(o => o.status !== 'delivered' && o.status !== 'cancelled'));
+        } catch (e) {
+          // erro silencioso
+        }
+        setOrdersLoading(false);
+      }
+    };
+    fetchOrders();
+  }, [user]);
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -127,6 +147,11 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleConfirmDelivery = async (orderId: string) => {
+    await orderService.updateOrderStatus(orderId, 'delivered');
+    setAdminOrders(prev => prev.filter(o => o.id !== orderId));
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
@@ -142,7 +167,7 @@ export default function ProfileScreen() {
       </View>
 
       {/* Profile Card */}
-      <View style={styles.profileCard}>
+      <ScrollView style={styles.profileCard} contentContainerStyle={{ paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
         {/* Profile Image */}
         <View style={styles.profileImageContainer}>
           <View style={styles.profileImage}>
@@ -151,10 +176,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Profile Information */}
-        <ScrollView
-          style={styles.profileInfo}
-          showsVerticalScrollIndicator={false}
-        >
+        <View style={styles.profileInfo}>
           <Controller
             control={control}
             name="name"
@@ -175,7 +197,6 @@ export default function ProfileScreen() {
             )}
           />
           {errors.name && <Text style={styles.labelError} >{errors.name?.message}</Text> }
-          
           <Controller
             control={control}
             name="email"
@@ -198,7 +219,6 @@ export default function ProfileScreen() {
             )}
           />
           {errors.email && <Text style={styles.labelError} >{errors.email?.message}</Text> }
-          
           <Controller
             control={control}
             name="address"
@@ -219,7 +239,6 @@ export default function ProfileScreen() {
             )}
           />
           {errors.address && <Text style={styles.labelError} >{errors.address?.message}</Text> }
-          
           <Controller
             control={control}
             name="phone"
@@ -241,7 +260,7 @@ export default function ProfileScreen() {
             )}
           />
           {errors.phone && <Text style={styles.labelError} >{errors.phone?.message}</Text> }
-        </ScrollView>
+        </View>
 
         {/* Relatórios Section */}
         <View style={styles.reportsSection}>
@@ -258,15 +277,44 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           )}
           
-          <TouchableOpacity
-            style={styles.reportButton}
-            onPress={() => navigation.navigate('PurchaseReport')}
-          >
-            <Ionicons name="bag" size={20} color="#4CAF50" />
-            <Text style={styles.reportButtonText}>Meus Pedidos</Text>
-            <Ionicons name="chevron-forward" size={20} color="#999" />
-          </TouchableOpacity>
+          {user?.role === 'user' && (
+            <TouchableOpacity
+              style={styles.reportButton}
+              onPress={() => navigation.navigate('PurchaseReport')}
+            >
+              <Ionicons name="bag" size={20} color="#4CAF50" />
+              <Text style={styles.reportButtonText}>Meus Pedidos</Text>
+              <Ionicons name="chevron-forward" size={20} color="#999" />
+            </TouchableOpacity>
+          )}
         </View>
+
+        {/* Pedidos para Confirmar (admin) */}
+        {user?.role === 'admin' && (
+          <View style={{ marginVertical: 20 }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 8 }}>Pedidos para Confirmar</Text>
+            {ordersLoading ? (
+              <ActivityIndicator color="#4CAF50" />
+            ) : adminOrders.length === 0 ? (
+              <Text style={{ color: '#888' }}>Nenhum pedido pendente.</Text>
+            ) : (
+              adminOrders.map(order => (
+                <View key={order.id} style={{ backgroundColor: '#fff', borderRadius: 8, padding: 12, marginBottom: 10, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 }}>
+                  <Text style={{ fontWeight: 'bold' }}>Pedido #{order.id}</Text>
+                  <Text>Cliente: {order.userName}</Text>
+                  <Text>Total: R$ {order.total.toFixed(2)}</Text>
+                  <Text>Status: {order.status}</Text>
+                  <TouchableOpacity
+                    style={{ backgroundColor: '#4CAF50', padding: 8, borderRadius: 6, marginTop: 8, alignItems: 'center' }}
+                    onPress={() => handleConfirmDelivery(order.id)}
+                  >
+                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Confirmar Entrega</Text>
+                  </TouchableOpacity>
+                </View>
+              ))
+            )}
+          </View>
+        )}
 
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
@@ -315,7 +363,7 @@ export default function ProfileScreen() {
             <Text style={styles.logoutButtonText}>Sair</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
